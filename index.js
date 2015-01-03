@@ -70,7 +70,7 @@ http.createServer(function (request, response) {
         //console.log((index+1) + '. ' + playlist.name + ' (available at ' + playlist.uri + ')');
       //});
 
-      response.end(JSON.stringify(data.items));
+      response.end(JSON.stringify(data.items, null, "\t"));
     })
     .catch(function(err) {
       console.log('Something went wrong', err);
