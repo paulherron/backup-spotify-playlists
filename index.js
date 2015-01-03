@@ -36,7 +36,8 @@ http.createServer(function (request, response) {
     response.end("Authorization code isn't present");
   }
 
-  response.writeHead(200, {'Content-Type': 'text/plain'});
+  //response.setHeader('Content-disposition', 'attachment; filename=' + new Date().toISOString().slice(0, 10) + '-spotify_playlists.json');
+  response.writeHead(200, {'Content-Type': 'application/json'});
 
   // First retrieve an access token
   spotifyApi.authorizationCodeGrant(urlParams.code)
@@ -56,34 +57,25 @@ http.createServer(function (request, response) {
       return spotifyApi.getMe();
     })
     .then(function(user) {
-      //console.log(user);
-
-      // "Retrieved data for Faruk Sahin"
       console.log('Retrieved data for ' + user['display_name'] + ' (' + user.id + ')');
-
-      // "Email is farukemresahin@gmail.com"
-      //console.log('Email is ' + data.email);
-
-      // "Image URL is http://media.giphy.com/media/Aab07O5PYOmQ/giphy.gif"
-      //console.log('Image URL is ' + data.images[0].url);
-
-      // "This user has a premium account"
-      //console.log('This user has a ' + data.product + ' account');
 
       return spotifyApi.getUserPlaylists(user.id);
     })
     .then(function(data) {
       console.log(data.items.length);
 
-      data.items.forEach(function(playlist, index) {
-        console.log((index+1) + '. ' + playlist.name + ' (available at ' + playlist.uri + ')');
-      });
+      //response.writeHead(200, {'Content-Type': 'text/csv'});
+
+      //data.items.forEach(function(playlist, index) {
+        //console.log((index+1) + '. ' + playlist.name + ' (available at ' + playlist.uri + ')');
+      //});
+
+      response.end(JSON.stringify(data.items));
     })
     .catch(function(err) {
       console.log('Something went wrong', err);
     });
 
-  response.end('Close this');
 }).listen(8080);
 
 console.log('Server started');
