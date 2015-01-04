@@ -4,6 +4,7 @@ var open = require('open');
 var http = require('http');
 var queryString = require('querystring');
 var url = require('url');
+var Promise = require('promise');
 
 require('./credentials');
 
@@ -36,17 +37,15 @@ http.createServer(function (request, response) {
     response.end("Authorization code isn't present");
   }
 
-  //response.setHeader('Content-disposition', 'attachment; filename=' + new Date().toISOString().slice(0, 10) + '-spotify_playlists.json');
+  response.setHeader('Content-disposition', 'attachment; filename=' + new Date().toISOString().slice(0, 10) + '-spotify_playlists.json');
   response.writeHead(200, {'Content-Type': 'application/json'});
 
   var output = [];
 
-  // First retrieve an access token
+  // Use the 'code' paramater that should be accessible in the 
+  // callback URL to generate an access token.
   spotifyApi.authorizationCodeGrant(urlParams.code)
     .then(function(data) {
-      console.log('Retrieved access token', data['access_token']);
-
-      // Set the access token
       spotifyApi.setAccessToken(data['access_token']);
 
       return spotifyApi.getMe();
@@ -57,10 +56,18 @@ http.createServer(function (request, response) {
       return spotifyApi.getUserPlaylists(user.id);
     })
     .then(function(data) {
-      return data.items.map(function(playlist) {
-        playlist.tracks.items = ['hello', 'world'];
-        return playlist;
+
+      // For each of the retrieved playlists, make a separate
+      // API request to fetch a list of its tracks.
+      var promises = data.items.map(function(playlist) {
+        return spotifyApi.getPlaylistTracks(playlist.owner.id, playlist.id)
+          .then(function(tracks) {
+            playlist.tracks.items = tracks.items;
+            return playlist;
+          });
       });
+
+      return Promise.all(promises);
     }).then(function(playlists) {
       output.push(playlists);
       response.end(JSON.stringify(playlists, null, "\t"));
