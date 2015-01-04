@@ -1,18 +1,18 @@
-var SpotifyWebApi = require('./'),
-  open = require('open'),
-  http = require('http'),
-  queryString = require('querystring'),
-  url = require('url');
+var SpotifyWebApi = require('./');
+
+var open = require('open');
+var http = require('http');
+var queryString = require('querystring');
+var url = require('url');
 
 require('./credentials');
 
-/* Set the credentials given on Spotify's My Applications page.
- * https://developer.spotify.com/my-applications
- */
 var spotifyApi = new SpotifyWebApi(credentials);
 
 var authorizeUrl = spotifyApi.createAuthorizeURL(['user-read-private', 'user-read-email', 'playlist-read-private'], null);
 
+// If this is being run locally on the command line, open up
+// the authorize page in the default browser.
 open(authorizeUrl, function (err) {
   if (err) throw err;
   console.log('The user closed the browser');
@@ -39,6 +39,8 @@ http.createServer(function (request, response) {
   //response.setHeader('Content-disposition', 'attachment; filename=' + new Date().toISOString().slice(0, 10) + '-spotify_playlists.json');
   response.writeHead(200, {'Content-Type': 'application/json'});
 
+  var output = [];
+
   // First retrieve an access token
   spotifyApi.authorizationCodeGrant(urlParams.code)
     .then(function(data) {
@@ -46,31 +48,22 @@ http.createServer(function (request, response) {
 
       // Set the access token
       spotifyApi.setAccessToken(data['access_token']);
-      spotifyApi.setRefreshToken(data['refresh_token']);
-      console.log('token', data);
 
-      // Save the amount of seconds until the access token expired
-      tokenExpirationEpoch = (new Date().getTime() / 1000) + data['expires_in'];
-      console.log('Retrieved token. It expires in ' + Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) + ' seconds!');
-
-      // Use the access token to retrieve information about the user connected to it
       return spotifyApi.getMe();
     })
     .then(function(user) {
-      console.log('Retrieved data for ' + user['display_name'] + ' (' + user.id + ')');
+      console.log('Retrieved data for ' + user.display_name + ' (' + user.id + ')');
 
       return spotifyApi.getUserPlaylists(user.id);
     })
     .then(function(data) {
-      console.log(data.items.length);
-
-      //response.writeHead(200, {'Content-Type': 'text/csv'});
-
-      //data.items.forEach(function(playlist, index) {
-        //console.log((index+1) + '. ' + playlist.name + ' (available at ' + playlist.uri + ')');
-      //});
-
-      response.end(JSON.stringify(data.items, null, "\t"));
+      return data.items.map(function(playlist) {
+        playlist.tracks.items = ['hello', 'world'];
+        return playlist;
+      });
+    }).then(function(playlists) {
+      output.push(playlists);
+      response.end(JSON.stringify(playlists, null, "\t"));
     })
     .catch(function(err) {
       console.log('Something went wrong', err);
