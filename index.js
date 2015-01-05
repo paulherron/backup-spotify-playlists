@@ -25,20 +25,21 @@ http.createServer(function (request, response) {
   // Redirect to the authorize URL, which in turn should bring the 
   // user back to the /callback URL with the authorization code appended.
   if (request.url.indexOf('/callback', -1)) {
-    response.writeHead(302, {'Location': authorizeUrl});
+    response.writeHead(301, {'Location': authorizeUrl});
+    console.log(response);
     response.end();
   }
 
   var urlParts = url.parse(request.url);
   var urlParams = queryString.parse(urlParts.query);
 
-  if (typeof urlParams.code == 'undefined') {
+  if (urlParams.code) {
+    response.setHeader('Content-disposition', 'attachment; filename=' + new Date().toISOString().slice(0, 10) + '-spotify_playlists.json');
+    response.writeHead(200, {'Content-Type': 'application/json'});
+  } else {
     response.writeHead(400);
     response.end("Authorization code isn't present");
   }
-
-  response.setHeader('Content-disposition', 'attachment; filename=' + new Date().toISOString().slice(0, 10) + '-spotify_playlists.json');
-  response.writeHead(200, {'Content-Type': 'application/json'});
 
   var output = [];
 
