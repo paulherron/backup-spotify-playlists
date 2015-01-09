@@ -42,6 +42,9 @@ app.get('/callback', function(request, response) {
     response.end("Authorization code isn't present");
   }
 
+  var userId = null;
+  var playlists = [];
+
   // Use the 'code' paramater that should be accessible in the 
   // callback URL to generate an access token.
   spotifyApi.authorizationCodeGrant(request.query.code)
@@ -53,14 +56,45 @@ app.get('/callback', function(request, response) {
     .then(function(user) {
       console.log('Retrieved data for ' + user.display_name + ' (' + user.id + ')');
 
-      return spotifyApi.getUserPlaylists(user.id, {limit: 50});
+      userId = user.id;
+      return spotifyApi.getUserPlaylists(user.id, {limit: 4});
     })
     .then(function(data) {
-      console.log(data);
+      console.log("Got first page of results for user's playlists");
+
+      playlists = data;
+
+      // Fetch all the subsequent pages of playlists from the API.
+      var promises = [];
+      for (var i = data.limit; i < data.total; i += data.limit) {
+        var extraPage = function() {
+          console.log('Getting new page for results ' + i + ' onwards');
+          return spotifyApi.getUserPlaylists(userId, {limit: data.limit, offset: i});
+        };
+
+        promises.push(extraPage());
+      }
+
+      return Promise.all(promises);
+    })
+    .then(function(playlistPages) {
+      console.log('Fetched all playlist pages');
+
+      // Merge all the playlists from the various API pages into one big array.
+      playlistPages.forEach(function(playlistPage, index) {
+        //console.log('current items stored', playlists.items);
+        //console.log('items to be added', playlistPage.items);
+
+        console.log('adding extra playlist page', index + 1);
+        playlists.items = playlists.items.concat(playlistPage.items);
+        console.log('Total of ' + playlists.items.length + ' playlist pulled in');
+      });
+
+      //console.log(data);
 
       // For each of the retrieved playlists, make a separate
       // API request to fetch a list of its tracks.
-      var promises = data.items.map(function(playlist) {
+      var promises = playlists.items.map(function(playlist) {
         return spotifyApi.getPlaylistTracks(playlist.owner.id, playlist.id)
           .then(function(tracks) {
             playlist.tracks.items = tracks.items;
@@ -81,6 +115,3 @@ app.get('/callback', function(request, response) {
 app.get('*', function(request, response) {
   response.redirect('/');
 });
-
-
-console.log('Server started');
