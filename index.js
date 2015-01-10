@@ -33,15 +33,7 @@ app.get('/', function(request, response) {
 
 app.get('/callback', function(request, response) {
 
-  // Spotify should have redirected back to this callback URL with a valid access code 
-  // in the URL, like /callback?code=abc123.
-  if (request.query.code) {
-    response.setHeader('Content-disposition', 'attachment; filename=' + new Date().toISOString().slice(0, 10) + '-spotify_playlists.json');
-    response.writeHead(200, {'Content-Type': 'application/json'});
-  } else {
-    response.writeHead(400);
-    response.end("Authorization code isn't present");
-  }
+  checkAuthorizationCode(request.query.code, response);
 
   // Use the 'code' parameter that should be accessible
   // in the callback URL to generate an access token.
@@ -142,4 +134,20 @@ function showSummary(playlists) {
       console.log('  [Empty playlist]');
     }
   });
+}
+
+/**
+ * Checks for an authorization code like /callback?code=abc123 in the URL and responds accordingly.
+ *
+ * @param string code The authorization code, which should have been included in the callback URL that Spotify redirected back to
+ * @param object response The response object
+ */
+function checkAuthorizationCode(code, response) {
+  if (code) {
+    response.setHeader('Content-disposition', 'attachment; filename=' + new Date().toISOString().slice(0, 10) + '-spotify_playlists.json');
+    response.writeHead(200, {'Content-Type': 'application/json'});
+  } else {
+    response.writeHead(400);
+    response.end("Authorization code isn't present");
+  }
 }
