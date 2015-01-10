@@ -52,13 +52,19 @@ app.get('/callback', function(request, response) {
       spotifyApi.setAccessToken(data['access_token']);
 
       return spotifyApi.getMe();
+    }, function(error) {
+      console.error('Error getting authorization code', error);
     })
+
     .then(function(user) {
       console.log('Retrieved data for ' + user.display_name + ' (' + user.id + ')');
 
       userId = user.id;
       return spotifyApi.getUserPlaylists(user.id, {limit: 4});
+    }, function(error) {
+      console.error('Error getting user profile', error);
     })
+
     .then(function(data) {
       console.log("Got first page of results for user's playlists");
 
@@ -69,28 +75,25 @@ app.get('/callback', function(request, response) {
       for (var i = data.limit; i < data.total; i += data.limit) {
         var extraPage = function() {
           console.log('Getting new page for results ' + i + ' onwards');
-          return spotifyApi.getUserPlaylists(userId, {limit: data.limit, offset: i});
+          return spotifyApi.getUserPlaylists(userId, {limit: data.limit, offset: i})
+            .then(function(playlistPage) {
+              console.log('Fetched playlist page ' + playlistPage.offset / playlistPage.limit + ' of ' + Math.floor(playlistPage.total / playlistPage.limit));
+              playlists.items = playlists.items.concat(playlistPage.items);
+              console.log('Total of ' + playlists.items.length + ' playlists pulled in');
+              return true;
+            });
         };
 
         promises.push(extraPage());
       }
 
       return Promise.all(promises);
+    }, function(error) {
+      console.error('Error getting user playlists', error);
     })
+
     .then(function(playlistPages) {
       console.log('Fetched all playlist pages');
-
-      // Merge all the playlists from the various API pages into one big array.
-      playlistPages.forEach(function(playlistPage, index) {
-        //console.log('current items stored', playlists.items);
-        //console.log('items to be added', playlistPage.items);
-
-        console.log('adding extra playlist page', index + 1);
-        playlists.items = playlists.items.concat(playlistPage.items);
-        console.log('Total of ' + playlists.items.length + ' playlist pulled in');
-      });
-
-      //console.log(data);
 
       // For each of the retrieved playlists, make a separate
       // API request to fetch a list of its tracks.
@@ -99,19 +102,46 @@ app.get('/callback', function(request, response) {
           .then(function(tracks) {
             playlist.tracks.items = tracks.items;
             return playlist;
+          }, function(error) {
+            console.log('Error getting playlist tracks page', error); 
           });
       });
 
       return Promise.all(promises);
-    }).then(function(playlists) {
-      response.end(JSON.stringify(playlists, null, "\t"));
+    }, function(error) {
+      console.error('Error getting additional playlist pages', error);
     })
-    .catch(function(err) {
-      console.log('Something went wrong', err);
-    });
 
+    .then(function(playlists) {
+      showSummary(playlists);
+
+      response.end(JSON.stringify(playlists, null, "\t"));
+    }, function(error) {
+      console.error('Error getting playlist tracks', error);
+    })
+
+    .catch(function(error) {
+      console.error('Something went wrong', error);
+    });
 });
 
 app.get('*', function(request, response) {
   response.redirect('/');
 });
+
+/**
+ * Logs an overview of the fetched playlists to the console. 
+ *
+ * @param array playlists Array of playlists
+ */
+function showSummary(playlists) {
+  playlists.forEach(function(playlist) {
+    console.log('Playlist "' + playlist.name + '"');
+
+    if (playlist.tracks.items.length) {
+      console.log('  Track "' + playlist.tracks.items[0]['track']['name'] + '"');
+    } else {
+      console.log('  [Empty playlist]');
+    }
+  });
+}
