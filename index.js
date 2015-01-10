@@ -11,7 +11,7 @@ require('./credentials');
 
 var spotifyApi = new SpotifyWebApi(credentials);
 
-var authorizeUrl = spotifyApi.createAuthorizeURL(['user-read-private', 'user-read-email', 'playlist-read-private'], null);
+var authorizeUrl = spotifyApi.createAuthorizeURL(['user-read-private', 'playlist-read-private'], null);
 
 // If this is being run locally on the command line, open up
 // the homepage in the default browser.
