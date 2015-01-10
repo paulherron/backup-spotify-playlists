@@ -1,17 +1,24 @@
 var SpotifyWebApi = require('./');
 var Promise = require('promise');
 
+require('./credentials');
+var spotifyApi = new SpotifyWebApi(credentials);
+
 var open = require('open');
 var http = require('http');
 var queryString = require('querystring');
 var url = require('url');
 var express = require('express');
 
-require('./credentials');
-
-var spotifyApi = new SpotifyWebApi(credentials);
-
 var authorizeUrl = spotifyApi.createAuthorizeURL(['user-read-private', 'playlist-read-private'], null);
+var app = express();
+
+var userId = null;
+var playlists = [];
+
+app.listen(8080);
+app.set('view engine', 'html');
+app.engine('html', require('ejs').renderFile);
 
 // If this is being run locally on the command line, open up
 // the homepage in the default browser.
@@ -19,12 +26,6 @@ open('http://localhost:8080', function (err) {
   if (err) throw err;
   console.log('The user closed the browser');
 });
-
-var app = express();
-
-app.listen(8080);
-app.set('view engine', 'html');
-app.engine('html', require('ejs').renderFile);
 
 app.get('/', function(request, response) {
     response.render('index.html', {authorizeUrl: authorizeUrl});
@@ -42,11 +43,8 @@ app.get('/callback', function(request, response) {
     response.end("Authorization code isn't present");
   }
 
-  var userId = null;
-  var playlists = [];
-
-  // Use the 'code' paramater that should be accessible in the 
-  // callback URL to generate an access token.
+  // Use the 'code' parameter that should be accessible
+  // in the callback URL to generate an access token.
   spotifyApi.authorizationCodeGrant(request.query.code)
     .then(function(data) {
       spotifyApi.setAccessToken(data['access_token']);
