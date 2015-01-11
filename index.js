@@ -14,6 +14,9 @@ var authorizeUrl = spotifyApi.createAuthorizeURL(['user-read-private', 'playlist
 var app = express();
 
 var userId = null;
+
+var trackFields = 'total,limit,offset,items(track(name,href,album(name,href)))';
+
 var playlists = [];
 
 app.listen(8080);
@@ -88,10 +91,29 @@ app.get('/callback', function(request, response) {
       // For each of the retrieved playlists, make a separate
       // API request to fetch a list of its tracks.
       var promises = playlists.items.map(function(playlist) {
-        return spotifyApi.getPlaylistTracks(playlist.owner.id, playlist.id)
+
+        return spotifyApi.getPlaylistTracks(playlist.owner.id, playlist.id, {fields: trackFields})
           .then(function(tracks) {
             playlist.tracks.items = tracks.items;
-            return playlist;
+
+            var trackPromises = [];
+            for (var i = tracks.limit; i < tracks.total; i += tracks.limit) {
+              var extraPage = function() {
+                console.log('Getting new page for results ' + i + ' onwards');
+                return spotifyApi.getPlaylistTracks(playlist.owner.id, playlist.id, {limit: tracks.limit, offset: i, fields: trackFields})
+                  .then(function(tracksPage) {
+                    console.log('Fetched tracks page ' + tracksPage.offset / tracksPage.limit + ' of ' + Math.floor(tracksPage.total / tracksPage.limit));
+                    playlist.tracks.items = playlist.tracks.items.concat(tracksPage.items);
+                    console.log('Total of ' + playlist.tracks.items.length + ' tracks pulled in for playlist ' + playlist.name);
+                    return playlist;
+                  });
+              };
+
+              trackPromises.push(extraPage());
+            }
+
+            return Promise.all(trackPromises);
+            //return playlist;
           }, function(error) {
             console.log('Error getting playlist tracks page', error); 
           });
