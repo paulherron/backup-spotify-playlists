@@ -102,7 +102,7 @@ app.get('/callback', function(request, response) {
 
         console.log('Fetching playlist ' + playlistId + ' by ' + userId);
         var fetchedPlaylist = function() {
-          return spotifyApi.getPlaylist(userId, playlistId, {fields: playlistFields})
+          return spotifyApi.getPlaylist(userId, playlistId, {fields: playlistFields, limit: 9999})
             .then(function(playlist) {
               console.log('Fetched playlist: ' + playlist.name);
               return playlist;
@@ -141,10 +141,21 @@ app.get('*', function(request, response) {
  */
 function showSummary(playlists) {
   playlists.forEach(function(playlist) {
-    console.log('Playlist "' + playlist.name + '"');
+    console.log('Playlist "' + playlist.name + '" containing ' + playlist.tracks.items.length + ' tracks');
 
-    if (playlist.tracks.items.length) {
+    var trackCount = playlist.tracks.items.length;
+    if (trackCount) {
       console.log('  Track "' + playlist.tracks.items[0]['track']['name'] + '"');
+
+      if (trackCount > 1) {
+        var moreMessage = 'and ' + (trackCount - 1) + ' more track';
+
+        if (trackCount > 2) {
+          moreMessage += 's';
+        }
+
+        console.log(moreMessage);
+      }
     } else {
       console.log('  [Empty playlist]');
     }
