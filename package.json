@@ -1,6 +1,6 @@
 {
   "name": "backup-spotify-playlists",
-  "version": "0.1",
+  "version": "1.2.2",
   "homepage": "https://github.com/paulherron/backup-spotify-playlists",
   "description": "A Node app to fetch a JSON backup of an account's Spotify playlists",
   "main": "lib/spotify-web-api.js",
