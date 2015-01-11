@@ -14,10 +14,15 @@ var authorizeUrl = spotifyApi.createAuthorizeURL(['user-read-private', 'playlist
 var app = express();
 
 var userId = null;
+var playlistIds = [];
 
-var trackFields = 'total,limit,offset,items(track(name,href,album(name,href)))';
+// Fields to include when getting a list of the user's playlists.
+// This is a minimal; the main field of interest is the playlist's 'id'
+// field, which is then used to fetch each playlist in full as a separate request.
+var userPlaylistFields = 'offset,limit,total,items.id';
 
-var playlists = [];
+// Fields to include when fetching the the full playlist.
+var playlistFields = 'offset,limit,total,name,id,href,tracks.items(track(name,href,album(name,href),artists(name,href)))';
 
 app.listen(8080);
 app.set('view engine', 'html');
@@ -53,27 +58,28 @@ app.get('/callback', function(request, response) {
       console.log('Retrieved data for ' + user.display_name + ' (' + user.id + ')');
 
       userId = user.id;
-      return spotifyApi.getUserPlaylists(user.id, {limit: 4});
+      return spotifyApi.getUserPlaylists(user.id, {limit: 4, fields: userPlaylistFields});
     }, function(error) {
       console.error('Error getting user profile', error);
     })
 
-    .then(function(data) {
+    .then(function(userPlaylists) {
       console.log("Got first page of results for user's playlists");
-
-      playlists = data;
 
       // Fetch all the subsequent pages of playlists from the API.
       var promises = [];
-      for (var i = data.limit; i < data.total; i += data.limit) {
+      for (var i = userPlaylists.limit; i < 20; i += userPlaylists.limit) {
         var extraPage = function() {
           console.log('Getting new page for results ' + i + ' onwards');
-          return spotifyApi.getUserPlaylists(userId, {limit: data.limit, offset: i})
+          return spotifyApi.getUserPlaylists(userId, {limit: userPlaylists.limit, offset: i, fields: userPlaylistFields})
             .then(function(playlistPage) {
               console.log('Fetched playlist page ' + playlistPage.offset / playlistPage.limit + ' of ' + Math.floor(playlistPage.total / playlistPage.limit));
-              playlists.items = playlists.items.concat(playlistPage.items);
-              console.log('Total of ' + playlists.items.length + ' playlists pulled in');
-              return true;
+
+              playlistPage.items.forEach(function(playlist) {
+                playlistIds = playlistIds.concat(playlist.id);
+              });
+
+              return playlistPage;
             });
         };
 
@@ -86,42 +92,18 @@ app.get('/callback', function(request, response) {
     })
 
     .then(function(playlistPages) {
-      console.log('Fetched all playlist pages');
 
-      // For each of the retrieved playlists, make a separate
-      // API request to fetch a list of its tracks.
-      var promises = playlists.items.map(function(playlist) {
+      var promises = [];
 
-        return spotifyApi.getPlaylistTracks(playlist.owner.id, playlist.id, {fields: trackFields})
-          .then(function(tracks) {
-            playlist.tracks.items = tracks.items;
+      playlistIds.forEach(function(playlistId) {
+        var fetchedPlaylist = function() {
+          return spotifyApi.getPlaylist(userId, playlistId, {fields: playlistFields});
+        }
 
-            var trackPromises = [];
-            for (var i = tracks.limit; i < tracks.total; i += tracks.limit) {
-              var extraPage = function() {
-                console.log('Getting new page for results ' + i + ' onwards');
-                return spotifyApi.getPlaylistTracks(playlist.owner.id, playlist.id, {limit: tracks.limit, offset: i, fields: trackFields})
-                  .then(function(tracksPage) {
-                    console.log('Fetched tracks page ' + tracksPage.offset / tracksPage.limit + ' of ' + Math.floor(tracksPage.total / tracksPage.limit));
-                    playlist.tracks.items = playlist.tracks.items.concat(tracksPage.items);
-                    console.log('Total of ' + playlist.tracks.items.length + ' tracks pulled in for playlist ' + playlist.name);
-                    return playlist;
-                  });
-              };
-
-              trackPromises.push(extraPage());
-            }
-
-            return Promise.all(trackPromises);
-            //return playlist;
-          }, function(error) {
-            console.log('Error getting playlist tracks page', error); 
-          });
+        promises.push(fetchedPlaylist());
       });
 
       return Promise.all(promises);
-    }, function(error) {
-      console.error('Error getting additional playlist pages', error);
     })
 
     .then(function(playlists) {
