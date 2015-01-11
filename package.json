@@ -3,7 +3,7 @@
   "version": "0.1",
   "homepage": "https://github.com/paulherron/backup-spotify-playlists",
   "description": "A Node app to fetch a JSON backup of an account's Spotify playlists",
-  "main": "src/spotify-web-api.js",
+  "main": "lib/spotify-web-api.js",
   "author": "Paul Herron",
   "license": "MIT",
   "repository": {
