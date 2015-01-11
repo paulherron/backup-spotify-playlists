@@ -19,7 +19,7 @@ var playlistIds = [];
 // Fields to include when getting a list of the user's playlists.
 // This is a minimal; the main field of interest is the playlist's 'id'
 // field, which is then used to fetch each playlist in full as a separate request.
-var userPlaylistFields = 'offset,limit,total,items.id';
+var userPlaylistFields = 'offset,limit,total,items(id,name,owner.id)';
 
 // Fields to include when fetching the the full playlist.
 var playlistFields = 'offset,limit,total,name,id,href,tracks.items(track(name,href,album(name,href),artists(name,href)))';
@@ -68,15 +68,17 @@ app.get('/callback', function(request, response) {
 
       // Fetch all the subsequent pages of playlists from the API.
       var promises = [];
-      for (var i = userPlaylists.limit; i < 20; i += userPlaylists.limit) {
+      for (var i = userPlaylists.limit; i < userPlaylists.total; i += userPlaylists.limit) {
         var extraPage = function() {
           console.log('Getting new page for results ' + i + ' onwards');
           return spotifyApi.getUserPlaylists(userId, {limit: userPlaylists.limit, offset: i, fields: userPlaylistFields})
             .then(function(playlistPage) {
               console.log('Fetched playlist page ' + playlistPage.offset / playlistPage.limit + ' of ' + Math.floor(playlistPage.total / playlistPage.limit));
+              //console.log(playlistPage);
 
               playlistPage.items.forEach(function(playlist) {
-                playlistIds = playlistIds.concat(playlist.id);
+                console.log('Got user playlist ' + playlist.id + ' by ' + playlist.owner.id);
+                playlistIds[ playlist.id ] = playlist.owner.id;
               });
 
               return playlistPage;
@@ -95,13 +97,22 @@ app.get('/callback', function(request, response) {
 
       var promises = [];
 
-      playlistIds.forEach(function(playlistId) {
+      for (var playlistId in playlistIds) {
+        var userId = playlistIds[ playlistId ];
+
+        console.log('Fetching playlist ' + playlistId + ' by ' + userId);
         var fetchedPlaylist = function() {
-          return spotifyApi.getPlaylist(userId, playlistId, {fields: playlistFields});
+          return spotifyApi.getPlaylist(userId, playlistId, {fields: playlistFields})
+            .then(function(playlist) {
+              console.log('Fetched playlist: ' + playlist.name);
+              return playlist;
+            }, function(error) {
+              console.error('Error fetching playlist: ' + playlistId);
+            });
         }
 
         promises.push(fetchedPlaylist());
-      });
+      };
 
       return Promise.all(promises);
     })
@@ -111,7 +122,7 @@ app.get('/callback', function(request, response) {
 
       response.end(JSON.stringify(playlists, null, "\t"));
     }, function(error) {
-      console.error('Error getting playlist tracks', error);
+      console.error('Error getting playlists', error);
     })
 
     .catch(function(error) {
