@@ -20,7 +20,7 @@ var playlists = [];
 var playlistFields = 'offset,limit,total,name,id,href,items(id,name,owner.id)';
 
 // Fields to include when fetching a playlist's tracks.
-var trackFields = 'total,limit,offset,items(track(name,href,album(name,href)))';
+var trackFields = 'total,limit,offset,items(track(name,href,album(name,href),artists(name,href)))';
 
 app.listen(8080);
 app.set('view engine', 'html');
