@@ -56,7 +56,7 @@ app.get('/callback', function(request, response) {
       console.log('Retrieved data for ' + user.display_name + ' (' + user.id + ')');
 
       userId = user.id;
-      return spotifyApi.getUserPlaylists(user.id, {limit: 4, fields: playlistFields});
+      return spotifyApi.getUserPlaylists(user.id, {fields: playlistFields});
     }, function(error) {
       console.error('Error getting user profile', error);
     })
