@@ -16,14 +16,10 @@ var app = express();
 var userId = null;
 var playlists = [];
 
-// Fields to include when getting a list of the user's playlists.
-// This is a minimal; the main field of interest is the playlist's 'id'
-// field, which is then used to fetch each playlist in full as a separate request.
-var userPlaylistFields = 'offset,limit,total,name,id,href,items(id,name,owner.id)';
+// Fields to include when getting a user playlist.
+var playlistFields = 'offset,limit,total,name,id,href,items(id,name,owner.id)';
 
-// Fields to include when fetching the the full playlist.
-var playlistFields = 'offset,limit,total,name,id,href,tracks.items(track(name,href,album(name,href),artists(name,href)))';
-
+// Fields to include when fetching a playlist's tracks.
 var trackFields = 'total,limit,offset,items(track(name,href,album(name,href)))';
 
 app.listen(8080);
@@ -60,7 +56,7 @@ app.get('/callback', function(request, response) {
       console.log('Retrieved data for ' + user.display_name + ' (' + user.id + ')');
 
       userId = user.id;
-      return spotifyApi.getUserPlaylists(user.id, {limit: 4, fields: userPlaylistFields});
+      return spotifyApi.getUserPlaylists(user.id, {limit: 4, fields: playlistFields});
     }, function(error) {
       console.error('Error getting user profile', error);
     })
@@ -75,7 +71,7 @@ app.get('/callback', function(request, response) {
       for (var i = userPlaylists.limit; i < 12; i += userPlaylists.limit) {
         var extraPage = function() {
           console.log('Getting new page for results ' + i + ' onwards');
-          return spotifyApi.getUserPlaylists(userId, {limit: userPlaylists.limit, offset: i, fields: userPlaylistFields})
+          return spotifyApi.getUserPlaylists(userId, {limit: userPlaylists.limit, offset: i, fields: playlistFields})
             .then(function(playlistPage) {
               console.log('Fetched playlist page ' + playlistPage.offset / playlistPage.limit + ' of ' + Math.floor(playlistPage.total / playlistPage.limit));
 
