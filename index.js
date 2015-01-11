@@ -17,7 +17,7 @@ var userId = null;
 var playlists = [];
 
 // Fields to include when getting a user playlist.
-var playlistFields = 'offset,limit,total,name,id,href,items(id,name,owner.id)';
+var playlistFields = 'offset,limit,total,name,id,href,items(id,name)';
 
 // Fields to include when fetching a playlist's tracks.
 var trackFields = 'total,limit,offset,items(track(name,href,album(name,href),artists(name,href)))';
@@ -68,7 +68,7 @@ app.get('/callback', function(request, response) {
 
       // Fetch all the subsequent pages of playlists from the API.
       var promises = [];
-      for (var i = userPlaylists.limit; i < 12; i += userPlaylists.limit) {
+      for (var i = userPlaylists.limit; i < userPlaylists.total; i += userPlaylists.limit) {
         var extraPage = function() {
           console.log('Getting new page for results ' + i + ' onwards');
           return spotifyApi.getUserPlaylists(userId, {limit: userPlaylists.limit, offset: i, fields: playlistFields})
@@ -124,7 +124,6 @@ app.get('/callback', function(request, response) {
             }
 
             return Promise.all(trackPromises);
-            //return playlist;
           }, function(error) {
             console.log('Error getting playlist tracks page', error); 
           });
@@ -134,7 +133,7 @@ app.get('/callback', function(request, response) {
       return Promise.all(promises);
     })
 
-    .then(function(allPlaylists) {
+    .then(function() {
       showSummary(playlists);
 
       response.end(JSON.stringify(playlists, null, "\t"));
