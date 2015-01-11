@@ -1,2 +1,128 @@
-<p>This tool prompts you to log in with Spotify and then generates a backup of your Spotify playlists as one big JSON file.</p>
-<a href="<%= authorizeUrl %>">Generate backup</a>
+<!DOCTYPE html>
+<html>
+	<head>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+		<style>
+			/* Space out content a bit */
+			body {
+				padding-top: 20px;
+				padding-bottom: 20px;
+			}
+
+			/* Everything but the jumbotron gets side spacing for mobile first views */
+			.header,
+			.marketing,
+			.footer {
+				padding-right: 15px;
+				padding-left: 15px;
+			}
+
+			/* Custom page header */
+			.header {
+				border-bottom: 1px solid #e5e5e5;
+			}
+			/* Make the masthead heading the same height as the navigation */
+			.header h3 {
+				padding-bottom: 19px;
+				margin-top: 0;
+				margin-bottom: 0;
+				line-height: 40px;
+			}
+
+			/* Custom page footer */
+			.footer {
+				padding-top: 19px;
+				color: #777;
+				border-top: 1px solid #e5e5e5;
+			}
+
+			/* Customize container */
+			@media (min-width: 768px) {
+				.container {
+					max-width: 730px;
+				}
+			}
+			.container-narrow > hr {
+				margin: 30px 0;
+			}
+
+			/* Main marketing message and sign up button */
+			.jumbotron {
+				text-align: center;
+				border-bottom: 1px solid #e5e5e5;
+			}
+			.jumbotron .btn {
+				padding: 14px 24px;
+				font-size: 21px;
+			}
+
+			/* Supporting marketing content */
+			.marketing {
+				margin: 40px 0;
+			}
+			.marketing p + h4 {
+				margin-top: 28px;
+			}
+
+			/* Responsive: Portrait tablets and up */
+			@media screen and (min-width: 768px) {
+				/* Remove the padding we set earlier */
+				.header,
+				.marketing,
+				.footer {
+					padding-right: 0;
+					padding-left: 0;
+				}
+				/* Space out the masthead */
+				.header {
+					margin-bottom: 30px;
+				}
+				/* Remove the bottom border on the jumbotron for visual effect */
+				.jumbotron {
+					border-bottom: 0;
+				}
+			}
+		</style>
+
+		<meta name="description" content="This tool prompts you to log in with Spotify and then generates a backup of your playlists.">
+		<meta property="og:title" content="Back up your Spotify playlists">
+		<meta property="og:description" content="This tool prompts you to log in with Spotify and then generates a backup of your playlists.">
+	</head>
+	<body>
+		<div class="container">
+			<div class="jumbotron">
+				<h1>Back up your Spotify playlists</h1>
+				<p class="lead">This tool prompts you to log in with Spotify and then generates a backup of your playlists.</p>
+				<a href="<%= authorizeUrl %>" class="btn btn-lg btn-success">Generate backup</a>
+			</div>
+
+			<div class="row marketing">
+				<div class="col-lg-6">
+					<h4>Permissions</h4>
+					<p>The script will ask you for <code>user-read-private</code> and <code>playlist-read-private</code> permissions, which it needs to read the playlists for your user account.</p>
+
+					<h4>What info is included?</h4>
+					<p>To keep the file size down, I'm currently including basic fields like playlist name and URL, track name and URL, artist names and URLs, and album name and URL. There's lots more info available from the API but including it generates huge files.</p>
+
+					<h4>What's excluded?</h4>
+					<p>The only thing I know to be missing is collaborative playlists, as the Spotify API doesn't currently return these. If you need your collaborative playlists to be present in the backup, temporarily remove their collaborative status.</p>
+				</div>
+
+				<div class="col-lg-6">
+					<h4>What's generated?</h4>
+					<p>It generates one big JSON file that represents your playlists and the tracks within them.</p>
+
+					<h4>I got an error!</h4>
+					<p>Let me know <a href="http://paulherron.com/#contact">via any of the contact details on my site</a>.</p>
+
+					<h4>What's this tool built on?</h4>
+					<p>It's using <a href="http://nodejs.org/">Node JS</a> and the <a href="https://github.com/thelinmichael/spotify-web-api-node">Spotify Web API for Node</a>.</p>
+				</div>
+			</div>
+
+			<footer class="footer">
+				<p>By <a href="http://paulherron.com">Paul Herron</a></p>
+			</footer>
+		</div>
+	</body>
+</html>
