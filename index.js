@@ -65,6 +65,7 @@ app.get('/callback', function(request, response) {
 
     .then(function(userPlaylists) {
       console.log("Got first page of results for user's playlists");
+      storeUserPlaylistIds(userPlaylists.items);
 
       // Fetch all the subsequent pages of playlists from the API.
       var promises = [];
@@ -74,12 +75,8 @@ app.get('/callback', function(request, response) {
           return spotifyApi.getUserPlaylists(userId, {limit: userPlaylists.limit, offset: i, fields: userPlaylistFields})
             .then(function(playlistPage) {
               console.log('Fetched playlist page ' + playlistPage.offset / playlistPage.limit + ' of ' + Math.floor(playlistPage.total / playlistPage.limit));
-              //console.log(playlistPage);
 
-              playlistPage.items.forEach(function(playlist) {
-                console.log('Got user playlist ' + playlist.id + ' by ' + playlist.owner.id);
-                playlistIds[ playlist.id ] = playlist.owner.id;
-              });
+              storeUserPlaylistIds(playlistPage.items);
 
               return playlistPage;
             });
@@ -148,7 +145,7 @@ function showSummary(playlists) {
       console.log('  Track "' + playlist.tracks.items[0]['track']['name'] + '"');
 
       if (trackCount > 1) {
-        var moreMessage = 'and ' + (trackCount - 1) + ' more track';
+        var moreMessage = '  and ' + (trackCount - 1) + ' more track';
 
         if (trackCount > 2) {
           moreMessage += 's';
@@ -176,4 +173,16 @@ function checkAuthorizationCode(code, response) {
     response.writeHead(400);
     response.end("Authorization code isn't present");
   }
+}
+
+/**
+ * Keeps a record of all the playlist IDs (and the users associated with them) encountered so far.
+ *
+ * @param array items Array of playlist objects
+ */
+function storeUserPlaylistIds(items) {
+  items.forEach(function(playlist) {
+    console.log('Got user playlist ' + playlist.id + ' by ' + playlist.owner.id);
+    playlistIds[ playlist.id ] = playlist.owner.id;
+  });
 }
