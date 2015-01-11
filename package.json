@@ -1,14 +1,14 @@
 {
-  "name": "spotify-web-api-node",
-  "version": "1.2.2",
-  "homepage": "https://github.com/thelinmichael/spotify-web-api-node",
-  "description": "A Node.js wrapper for Spotify's Web API",
+  "name": "backup-spotify-playlists",
+  "version": "0.1",
+  "homepage": "https://github.com/paulherron/backup-spotify-playlists",
+  "description": "A Node app to fetch a JSON backup of an account's Spotify playlists",
   "main": "src/spotify-web-api.js",
-  "author": "Michael Thelin",
+  "author": "Paul Herron",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/thelinmichael/spotify-web-api-node.git"
+    "url": "https://github.com/paulherron/backup-spotify-playlists.git"
   },
   "dependencies": {
     "ejs": "^2.0.7",
@@ -17,14 +17,5 @@
     "path": "^0.4.9",
     "promise": "^5.0.0",
     "restler": "^3.2.2"
-  },
-  "devDependencies": {
-    "xunit-file": "0.0.5",
-    "grunt-contrib-jshint": "~0.10.0",
-    "grunt-contrib-watch": "~0.6",
-    "grunt-simple-mocha": "0.4.x",
-    "should": "~3.0",
-    "mocha": "~1.20.1",
-    "sinon": "~1.12.2"
   }
 }
