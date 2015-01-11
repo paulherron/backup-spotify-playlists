@@ -121,7 +121,6 @@ function getRemainingPlaylistPages(userPlaylists) {
   var promises = [];
   for (var i = userPlaylists.limit; i < userPlaylists.total; i += userPlaylists.limit) {
     var extraPage = function() {
-      console.log('Getting new page for results ' + i + ' onwards');
       return spotifyApi.getUserPlaylists(userId, {limit: userPlaylists.limit, offset: i, fields: playlistFields})
         .then(function(playlistPage) {
           console.log('Fetched playlist page ' + playlistPage.offset / playlistPage.limit + ' of ' + Math.floor(playlistPage.total / playlistPage.limit));
@@ -155,7 +154,6 @@ function getTracks() {
         var trackPromises = [];
         for (var i = tracks.limit; i < tracks.total; i += tracks.limit) {
           var extraPage = function() {
-            console.log('Getting new page for results ' + i + ' onwards');
             return spotifyApi.getPlaylistTracks(playlist.owner.id, playlist.id, {limit: tracks.limit, offset: i, fields: trackFields})
               .then(function(tracksPage) {
                 console.log('Fetched tracks page ' + tracksPage.offset / tracksPage.limit + ' of ' + Math.floor(tracksPage.total / tracksPage.limit));
